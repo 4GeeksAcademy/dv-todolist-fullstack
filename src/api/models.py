@@ -8,7 +8,7 @@ class User(db.Model):
     email = db.Column(db.String(80), nullable=False, unique=True)
     password = db.Column(db.String(180), nullable=False)
     salt = db.Column(db.String(180), nullable=False)
-    avatar = db.Column(db.String(180))
+    avatar = db.Column(db.String(180), default="https://i.pravatar.cc/300")
     created_at = db.Column(db.DateTime(timezone=True), default=db.func.now(), nullable=False) 
     updated_at = db.Column(db.DateTime(timezone=True), default=db.func.now(), onupdate=db.func.now(), nullable=False )
     todos = db.relationship("Todos", back_populates="user")
