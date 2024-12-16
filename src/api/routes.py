@@ -8,6 +8,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from flask_cors import CORS
 from base64 import b64encode
 import os
+import cloudinary.uploader as uploader
 
 
 api = Blueprint('api', __name__)
@@ -20,25 +21,29 @@ CORS(api)
 @api.route('/register', methods=['POST']) 
 def add_new_user(): 
     try: 
-        body = request.json
+        # body = request.json
+        data_files = request.files
+        data_form = request.form
 
         # Validar campos requeridos 
-        required_fields = {"email", "name", "password"} 
-        missing_fields = required_fields - body.keys() 
+        # required_fields = {"email", "name", "password"} 
+        # missing_fields = required_fields - body.keys() 
         
-        if missing_fields: 
-            return jsonify(f"Missing fields: {', '.join(missing_fields)}"), 400 
+        # # if missing_fields: 
+        # #     return jsonify(f"Missing fields: {', '.join(missing_fields)}"), 400 
         
-        email = body["email"] 
-        name = body["name"] 
-        password = body["password"]
+        email = data_form["email"] 
+        name = data_form["name"] 
+        password = data_form["password"]
+        avatar = data_files["avatar"]
 
-        # Verificar si el usuario ya existe 
-        user_exist = User.query.filter_by(email=email).one_or_none() 
+        # # Verificar si el usuario ya existe 
+        # # user_exist = User.query.filter_by(email=email).one_or_none() 
 
-        if user_exist: 
-            return jsonify("User exists"), 400 
+        # # if user_exist: 
+        # #     return jsonify("User exists"), 400 
         
+        avatar = uploader.upload(avatar)
         # Crear nuevo usuario 
         salt = b64encode(os.urandom(32)).decode("utf-8")
         hashed_password = hash_password(password=password, salt=salt)
@@ -47,7 +52,8 @@ def add_new_user():
             name=name, 
             email=email, 
             password=hashed_password, 
-            salt=salt) 
+            salt=salt,
+            avatar=avatar["secure_url"]) 
         db.session.add(new_user) 
 
         # Confirmar cambios en la base de datos 
@@ -55,9 +61,9 @@ def add_new_user():
         return jsonify("User created successfully"), 201 
     
     except Exception as err: 
+        print(err.args)
         return jsonify(f"Error: {err}"), 500
     
-
 
 @api.route("/login", methods=["POST"])
 def get_login(): 
@@ -76,10 +82,7 @@ def get_login():
                 if check_password(user.password, password, user.salt):
                     # le pasasmos un diccionario con lo necesario
                     # OJO no se puede pasar informacion sencible por seguridad
-                    token = create_access_token(identity={
-                        "user_id":user.id,
-                        "rol":"general"
-                    })
+                    token = create_access_token(identity=user.id)
                     return jsonify({"token":token}), 200
                 else:
                     return jsonify({"message":"Bad credentials"}), 400
@@ -116,3 +119,12 @@ def add_one_todo(username=None):
             return jsonify(err.args), 500 
     except Exception as err: 
         return jsonify(err.args), 500
+
+
+@api.route("/todos", methods=["GET"])
+@jwt_required()
+def get_all_todos():
+    user_id = get_jwt_identity()
+
+    print(user_id)
+    return jsonify(user_id), 200

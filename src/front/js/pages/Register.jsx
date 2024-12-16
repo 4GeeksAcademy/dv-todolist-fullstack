@@ -1,5 +1,6 @@
 import React, { useState, useContext } from "react"
 import { Context } from "../store/appContext"
+import { Link } from "react-router-dom"
 
 const initialStateUser = {
     name: "",
@@ -22,7 +23,15 @@ const Register = () => {
     const handleSubmit = async (event) => {
         event.preventDefault()
 
-        const response = await actions.registerUser(user)
+        const formData = new FormData()
+        formData.append("name", user.name)
+        formData.append("email", user.email)
+        formData.append("password", user.password)
+        formData.append("avatar", user.avatar)
+
+
+        const response = await actions.registerUser(formData)
+
         if (response == 201) {
             setUser(initialStateUser)
             alert("Registro exitosamente")
@@ -78,14 +87,18 @@ const Register = () => {
                                 type="file"
                                 className="form-control"
                                 placeholder="Deimian Vásquez"
-                                value={user.file}
-                            // onChange={handleChange}
+                                // value={user.file}
+                                onChange={(event) => {
+                                    setUser({ ...user, avatar: event.target.files[0] })
+                                }}
                             />
                         </div>
                         <button className="btn btn-primary mt-3 w-100">Registarme</button>
                     </form>
-                    <div className="border border-danger">
-                        s
+                    <div className="border border-danger text-center">
+                        <p className="m-0">
+                            ¿ Tienes una cuenta? <Link to="/login">Entrar</Link>
+                        </p>
                     </div>
                 </div>
             </div>

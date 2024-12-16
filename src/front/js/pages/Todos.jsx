@@ -8,11 +8,7 @@ const Todos = () => {
 
     return (
         <>
-            {
-                store.token ?
-                    <h1>Tienes acceso</h1> :
-                    <Navigate to={"/login"} />
-            }
+            <h1>todos</h1>
         </>
     )
 }

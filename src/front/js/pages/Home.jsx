@@ -2,6 +2,7 @@ import React, { useContext } from "react";
 import { Context } from "../store/appContext";
 import { Navigate } from "react-router-dom";
 import "../../styles/home.css";
+import Todos from "./Todos.jsx";
 
 export const Home = () => {
 	const { store, actions } = useContext(Context);
@@ -10,7 +11,7 @@ export const Home = () => {
 		<>
 			{
 				store.token ?
-					<h1>Tienes acceso</h1> :
+					<Todos /> :
 					<Navigate to={"/login"} />
 			}
 		</>
