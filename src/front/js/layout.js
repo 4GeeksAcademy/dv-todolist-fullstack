@@ -12,6 +12,8 @@ import { Navbar } from "./component/navbar";
 import { Footer } from "./component/footer";
 import Register from "./pages/Register.jsx";
 import Login from "./pages/Login.jsx";
+import ResetPass from "./pages/ResetPass.jsx";
+import UpdatePassword from "./pages/UpdatePassword.jsx";
 
 //create your first component
 const Layout = () => {
@@ -31,6 +33,8 @@ const Layout = () => {
                         <Route element={<Register />} path="/register" />
                         <Route element={<Login />} path="/login" />
                         <Route element={<Single />} path="/single/:theid" />
+                        <Route element={<ResetPass />} path="/recovery-password" />
+                        <Route element={< UpdatePassword />} path="password-update" />
                         <Route element={<h1>Not found!</h1>} />
                     </Routes>
 

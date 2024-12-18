@@ -19,9 +19,8 @@ class User(db.Model):
             "name": self.name,
             "email":self.email,
             "avatar": self.avatar,
-            "todos": self.todos
+            # "todos": [item.serialize() for item in self.todos]
         }
-
 
 
 class Todos(db.Model):
@@ -32,3 +31,10 @@ class Todos(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now()) 
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=db.func.now(), default=db.func.now())
     user = db.relationship("User", back_populates="todos")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "label": self.label,
+            "is_done": self.is_done
+        }

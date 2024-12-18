@@ -3,18 +3,23 @@ This module takes care of starting the API Server, Loading the DB and Adding the
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, User,Todos
-from api.utils import generate_sitemap, APIException, check_password, hash_password
+from api.utils import generate_sitemap, APIException, check_password, hash_password, send_email
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
 from base64 import b64encode
 import os
 import cloudinary.uploader as uploader
+from datetime import timedelta
 
 
 api = Blueprint('api', __name__)
 
 # Allow CORS requests to this API
 CORS(api)
+
+
+expires_in_minutes = 10
+expires_delta = timedelta(minutes=expires_in_minutes)
 
 
 
@@ -74,7 +79,7 @@ def add_new_user():
     
 
 @api.route("/login", methods=["POST"])
-def get_login(): 
+def login(): 
     try:
         body = request.json
         email = body.get("email")
@@ -109,20 +114,25 @@ def get_login():
 def add_one_todo(username=None):
     try: 
         body = request.json 
-        # Validar campos requeridos 
-        if body.get("label") is None: 
-            return jsonify("debes enviarme un label"), 400 
-        
-        if body.get("is_done") is None: 
-            return jsonify("debes enviarme un is_done"), 400 
+        label = body.get("label", None)
+        is_done = body.get("is_done", None)
+
+        # Validar campos requeridos
+        required_fields = {"label", "is_done"}
+        missing_fields = {field for field in required_fields if not body.get(field)}
+
+        if missing_fields:
+            return jsonify(f"Campos requeridos: {', '.join(missing_fields)}"), 400
         
         # Obtener user_id del token 
         user_id = get_jwt_identity() 
+
         # Crear nueva tarea 
         todos = Todos( 
             label=body["label"], 
-            is_done=body["is_done"], 
-            user_id=user_id ) 
+            is_done=bool(body["is_done"]), 
+            user_id=int(user_id) 
+            ) 
         
         db.session.add(todos)  
         try: 
@@ -131,6 +141,7 @@ def add_one_todo(username=None):
         except Exception as err: 
             db.session.rollback() 
             return jsonify(err.args), 500 
+        
     except Exception as err: 
         return jsonify(err.args), 500
 
@@ -138,7 +149,42 @@ def add_one_todo(username=None):
 @api.route("/todos", methods=["GET"])
 @jwt_required()
 def get_all_todos():
-    user_id = get_jwt_identity()
+    try:
+        user_id = get_jwt_identity()
 
-    print(user_id)
-    return jsonify(user_id), 200
+        todos = Todos.query.filter_by(user_id=user_id).all()
+
+        return jsonify([item.serialize() for item in todos]), 200
+ 
+        return jsonify(user_id), 200    
+    except Exception as err:
+        return jsonify(f"Error: {err.args}")
+    
+
+@api.route("/reset-password", methods=["POST"])
+def reset_password():
+    body = request.json
+
+    # crear un link para poder recuperar la contraseña
+    access_token = create_access_token(identity=body, expires_delta=expires_delta)
+
+    # crear el mensaje a enviar por email
+
+    message = f"""
+        <h1> Si solicito recuperar la contraseña, ingrese al siguiente link</h1>
+        <a href="{os.getenv("FRONTEND_URL")}password-update?token={access_token}">
+            ir a recuperar contraseña
+        </a>
+    """
+
+    data = {
+        "subject": "Recuperación de contraseña",
+        "to": body,
+        "message": message
+    }
+
+    sended_email = send_email(data.get("subject"), data.get("to"), data.get("message"))
+
+    print(sended_email)
+
+    return jsonify("trabajando por un mejor servicio :)"), 200
