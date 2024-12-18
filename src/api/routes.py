@@ -25,35 +25,43 @@ def add_new_user():
         data_files = request.files
         data_form = request.form
 
+        data = {
+            "email":data_form.get("email", None) ,
+            "name": data_form.get("name", None), 
+            "password": data_form.get("password", None),
+            "avatar": data_files.get("avatar", None)
+
+        }
+
         # Validar campos requeridos 
-        # required_fields = {"email", "name", "password"} 
-        # missing_fields = required_fields - body.keys() 
+        required_fields = {"email", "name", "password"} 
+        missing_fields = {field for field in required_fields if not data.get(field)} 
         
-        # # if missing_fields: 
-        # #     return jsonify(f"Missing fields: {', '.join(missing_fields)}"), 400 
+        if missing_fields: 
+            return jsonify(f"Campos requeridos: {', '.join(missing_fields)}"), 400
         
-        email = data_form["email"] 
-        name = data_form["name"] 
-        password = data_form["password"]
-        avatar = data_files["avatar"]
+       
+        # Verificar si el usuario ya existe 
+        user_exist = User.query.filter_by(email=data.get("email")).one_or_none() 
 
-        # # Verificar si el usuario ya existe 
-        # # user_exist = User.query.filter_by(email=email).one_or_none() 
-
-        # # if user_exist: 
-        # #     return jsonify("User exists"), 400 
+        if user_exist: 
+            return jsonify("User exists"), 400 
         
-        avatar = uploader.upload(avatar)
+        
+        if data["avatar"] is not None:
+            avatar = uploader.upload(data.get("avatar"))
+            data["avatar"]  = avatar["secure_url"]
+        print(data)     
         # Crear nuevo usuario 
         salt = b64encode(os.urandom(32)).decode("utf-8")
-        hashed_password = hash_password(password=password, salt=salt)
+        hashed_password = hash_password(password=data.get("password"), salt=salt)
          
         new_user = User(
-            name=name, 
-            email=email, 
+            name=data.get("name"), 
+            email=data.get("email"), 
             password=hashed_password, 
             salt=salt,
-            avatar=avatar["secure_url"]) 
+            avatar=data["avatar"]) 
         db.session.add(new_user) 
 
         # Confirmar cambios en la base de datos 
@@ -72,8 +80,12 @@ def get_login():
         email = body.get("email")
         password = body.get("password")
 
-        if email is None or password is None:
-            return jsonify({"message":"You need email and password"}), 400
+        required_fields = {"email", "password"}
+        missing_fields = {field for field in required_fields if not body.get(field)}
+
+        if missing_fields:
+            return jsonify(f"Campos requeridos: {', '.join(missing_fields)}"), 400
+
         else:
             user = User.query.filter_by(email=email).one_or_none()
             if user is None:
@@ -81,9 +93,11 @@ def get_login():
             else:
                 if check_password(user.password, password, user.salt):
                     # le pasasmos un diccionario con lo necesario
-                    # OJO no se puede pasar informacion sencible por seguridad
-                    token = create_access_token(identity=user.id)
-                    return jsonify({"token":token}), 200
+                    token = create_access_token(identity=str(user.id))
+                    return jsonify({
+                        "token":token,
+                        "user":user.serialize()
+                        }), 200
                 else:
                     return jsonify({"message":"Bad credentials"}), 400
     except Exception as err:

@@ -13,6 +13,15 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True), default=db.func.now(), onupdate=db.func.now(), nullable=False )
     todos = db.relationship("Todos", back_populates="user")
 
+    def serialize(self):
+        return {
+            "id":self.id,
+            "name": self.name,
+            "email":self.email,
+            "avatar": self.avatar,
+            "todos": self.todos
+        }
+
 
 
 class Todos(db.Model):

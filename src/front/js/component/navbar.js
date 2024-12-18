@@ -12,11 +12,21 @@ export const Navbar = () => {
 				</Link>
 				<div className="ml-auto">
 					{
-						store.token == null ? "Login" :
+						store.token == null ?
+							<>
+								<Link
+									className="btn btn-primary mx-3"
+									to={"/login"}
+								>Entrar</Link>
+								<Link
+									className="btn btn-primary"
+									to={"/register"}
+								>Registrar</Link>
+							</> :
 							<button
 								className="btn btn-primary"
 								onClick={() => actions.logout()}
-							>Logout</button>
+							>Salir</button>
 					}
 
 

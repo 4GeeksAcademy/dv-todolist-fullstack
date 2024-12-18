@@ -68,9 +68,12 @@ const Login = () => {
                                 <button className="btn btn-primary w-100">Iniciar Sesión</button>
                             </div>
                         </form>
-                        <div className="border border-danger text-center">
+                        <div className="border text-center">
                             <p className="m-0">
                                 ¿No tienes una cuenta? <Link to={"/register"}>Regístrate</Link>
+                            </p>
+                            <p className="m-2">
+                                ¿Has olvidado la contraseña?
                             </p>
                         </div>
                     </div>

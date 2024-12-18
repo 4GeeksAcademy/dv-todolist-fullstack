@@ -52,12 +52,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 			getTodos: async () => {
 				try {
 					const store = getStore()
-					const { token } = store
+
 					const response = await fetch(`${process.env.BACKEND_URL}/todos`, {
 						method: "GET",
 						headers: {
 							"Content-Type": "application/json",
-							"Authorization": `Bearer ${token}`
+							"Authorization": `Bearer ${store.token}`
 						}
 					})
 					console.log(response)
